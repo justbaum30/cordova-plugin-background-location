@@ -1,20 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-		id="org.apache.cordova.device" version="0.2.3">
-	<name>Device</name>
-	<description>Cordova Device Plugin</description>
+		id="com.justinbaumgartner.cordova.geolocation-service" 
+		version="0.1">
+	<name>GeoLocation Service</name>
+	<description>Cordova GeoLocation Service Plugin</description>
+	<repo>https://github.com/justbaum30/cordova-plugin-geolocation-service</repo>
+	<author>Justin Baumgartner</author>
 	<license>Apache 2.0</license>
-	<keywords>cordova,device</keywords>
-	<js-module src="www/device.js" name="device">
-		<clobbers target="device" />
+	<keywords>cordova,geolocation,location,service,background,android,ios</keywords>
+	
+	<engines>
+        <engine name="cordova" version=">=3.0.0" />
+    </engines>
+	
+	<dependency id="org.apache.cordova.geolocation" url="https://github.com/apache/cordova-plugin-geolocation"/>
+	
+	<js-module src="www/GeoLocationService.js" name="GeoLocationService">
+		<clobbers target="plugins.geolocation.service" />
 	</js-module>
-	<platform name="ios">
-		<config-file target="config.xml" parent="/*">
-			<feature name="Device">
-				<param name="ios-package" value="CDVDevice"/>
+	
+	<!-- android -->
+	<platform name="android">
+		<config-file target="res/xml/config.xml" parent="/*">
+			<feature name="GeoLocationService">
+				<param name="android-package" value="com.justinbaumgartner.cordova.geolocation-service.GeoLocationService"/>
 			</feature>
 		</config-file>
-		<header-file src="src/ios/CDVDevice.h" />
-		<source-file src="src/ios/CDVDevice.m" />
+		
+		<!-- android intent receivers 
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+		
+		</config-file> -->
+		
+		<!-- android permissions -->
+		<config-file target="AndroidManifest.xml" parent="/manifest">
+			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+		</config-file>
+		
+		<source-file src="src/android/GeoLocationService.java" target-dir="src/com/justinbaumgartner/cordova/geolocationservice"/>
 	</platform>
 </plugin>
