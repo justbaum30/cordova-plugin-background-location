@@ -1,0 +1,8 @@
+*.cache
+Thumbs.db
+*.DS_Store
+
+*.bak
+*.log
+*.swp
+*.user
