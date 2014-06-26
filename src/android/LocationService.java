@@ -1,47 +1,37 @@
 package com.justinbaumgartner.cordova.backgroundlocation;
 
-import android.app.Service;
+import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
-import android.os.Binder;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 
-public class LocationService extends Service implements 
+public class LocationService extends IntentService implements 
 		GooglePlayServicesClient.ConnectionCallbacks, 
 		GooglePlayServicesClient.OnConnectionFailedListener {
 	
 	private LocationClient locationClient;
-	private boolean servicesAvailable = false;
 	
-	private final IBinder binder = new LocalBinder();
 	private static final String TAG = "LocationService";
 	
 	
-	@Override
-	public void onCreate(){
-		super.onCreate();
-		
-		servicesAvailable = isServicesConnected();
-		locationClient = new LocationClient(this, this, this);
+	public LocationService() {
+		super(TAG);
 	}
 	
 	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		super.onStartCommand(intent, flags, startId);
+	protected void onHandleIntent(Intent intent) {
+		// Abort if services not connected
+		if (!isServicesConnected())
+			return;
 		
 		setupLocationClient();
-		if (!locationClient.isConnected() || !locationClient.isConnecting())
-			locationClient.connect();
-		
-		return START_STICKY;
+		locationClient.connect();
 	}
 	
 	/**
@@ -67,6 +57,7 @@ public class LocationService extends Service implements
 	 * 
 	 */
 	private void setupLocationClient() {
+		Log.d(TAG, "Setting up the location client.");
 		if (locationClient == null)
 			locationClient = new LocationClient(this, this, this);
 	}
@@ -74,16 +65,9 @@ public class LocationService extends Service implements
 	/**
 	 * 
 	 */
-	public Location getCurrentLocation() {
+	private Location getCurrentLocation() {
+		Log.d(TAG, "Getting current location");
 		return locationClient.getLastLocation();
-	}
-	
-	@Override
-	public void onDestroy(){
-		if (locationClient != null)
-			locationClient = null;
-		
-		super.onDestroy();
 	}
 	
 	/**
@@ -94,6 +78,8 @@ public class LocationService extends Service implements
 	@Override
 	public void onConnected(Bundle data) {
 		Log.d(TAG, "Location services connected.");
+		Location currentLocation = getCurrentLocation();
+		Log.d(TAG, "Latitude: " + currentLocation.getLatitude() + ", Longitude: " + currentLocation.getLongitude());
 	}
 
 	/**
@@ -130,17 +116,4 @@ public class LocationService extends Service implements
 //        }
 		Log.e(TAG, "Connection to location services failed.");
 	}
-	
-	public class LocalBinder extends Binder {
-		LocationService getService() {
-			return LocationService.this;
-		}
-	}
-	
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-
-	
 }
