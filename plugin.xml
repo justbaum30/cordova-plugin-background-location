@@ -28,16 +28,17 @@
 			</feature>
 		</config-file>
 		
-		<!-- android intent receivers 
-		<config-file target="AndroidManifest.xml" parent="/manifest/application">
-		
-		</config-file> -->
-		
 		<!-- android permissions -->
 		<config-file target="AndroidManifest.xml" parent="/manifest">
-			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+			<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+		</config-file>
+		
+		<!-- android services and receivers -->
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+			<service android:enabled="true" android:name="com.justinbaumgartner.cordova.backgroundlocation.LocationService" />
 		</config-file>
 		
 		<source-file src="src/android/BackgroundLocationPlugin.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
+		<source-file src="src/android/LocationService.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
 	</platform>
 </plugin>

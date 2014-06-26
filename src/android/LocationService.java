@@ -2,16 +2,24 @@ package com.justinbaumgartner.cordova.backgroundlocation;
 
 import android.app.Service;
 import android.content.Intent;
+import android.location.Location;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
 
-public class LocationService extends Service implements GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener {
+public class LocationService extends Service implements 
+		GooglePlayServicesClient.ConnectionCallbacks, 
+		GooglePlayServicesClient.OnConnectionFailedListener {
+	
+	private LocationClient locationClient;
+	private boolean servicesAvailable = false;
 	
 	private final IBinder binder = new LocalBinder();
 	private static final String TAG = "LocationService";
@@ -20,11 +28,18 @@ public class LocationService extends Service implements GooglePlayServicesClient
 	@Override
 	public void onCreate(){
 		super.onCreate();
+		
+		servicesAvailable = isServicesConnected();
+		locationClient = new LocationClient(this, this, this);
 	}
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		super.onStartCommand(intent, flags, startId);
+		
+		setupLocationClient();
+		if (!locationClient.isConnected() || !locationClient.isConnecting())
+			locationClient.connect();
 		
 		return START_STICKY;
 	}
@@ -47,6 +62,29 @@ public class LocationService extends Service implements GooglePlayServicesClient
             return false;
         }
     }
+	
+	/**
+	 * 
+	 */
+	private void setupLocationClient() {
+		if (locationClient == null)
+			locationClient = new LocationClient(this, this, this);
+	}
+	
+	/**
+	 * 
+	 */
+	public Location getCurrentLocation() {
+		return locationClient.getLastLocation();
+	}
+	
+	@Override
+	public void onDestroy(){
+		if (locationClient != null)
+			locationClient = null;
+		
+		super.onDestroy();
+	}
 	
 	/**
      * Called by Location Services when the request to connect the

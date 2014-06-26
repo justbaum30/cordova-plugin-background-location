@@ -11,6 +11,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.location.Location;
 import android.os.IBinder;
 import android.widget.Toast;
 
@@ -44,7 +45,8 @@ public class BackgroundLocationPlugin extends CordovaPlugin {
 	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		if (action.equals("test")) {
-			Toast.makeText(webView.getContext(), "test called", Toast.LENGTH_SHORT).show();
+			Location currentLocation = service.getCurrentLocation();
+			Toast.makeText(webView.getContext(), "current location: " + currentLocation.getLatitude() + ", " + currentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
 			return true;
 		}
 		else if (action.equals("deviceready")) {
