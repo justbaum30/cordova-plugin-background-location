@@ -40,5 +40,7 @@
 		
 		<source-file src="src/android/BackgroundLocationPlugin.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
 		<source-file src="src/android/LocationService.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
+		<source-file src="src/android/SimpleGeofence.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
+		<source-file src="src/android/SimpleGeofenceStore.java" target-dir="src/com/justinbaumgartner/cordova/backgroundlocation"/>
 	</platform>
 </plugin>
