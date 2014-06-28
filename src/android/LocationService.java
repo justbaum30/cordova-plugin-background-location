@@ -1,6 +1,10 @@
 package com.justinbaumgartner.cordova.backgroundlocation;
 
+import java.util.Arrays;
+import java.util.List;
+
 import android.app.IntentService;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
@@ -9,13 +13,20 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
+import com.google.android.gms.location.LocationStatusCodes;
 
 public class LocationService extends IntentService implements 
 		GooglePlayServicesClient.ConnectionCallbacks, 
-		GooglePlayServicesClient.OnConnectionFailedListener {
+		GooglePlayServicesClient.OnConnectionFailedListener, 
+		OnAddGeofencesResultListener {
 	
 	private LocationClient locationClient;
+	private SimpleGeofenceStore geofenceStore;
+	
+	public final static String IS_INITIALIZATION_KEY = "isInit";
 	
 	private static final String TAG = "LocationService";
 	
@@ -26,12 +37,36 @@ public class LocationService extends IntentService implements
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		// Abort if services not connected
-		if (!isServicesConnected())
-			return;
-		
-		setupLocationClient();
-		locationClient.connect();
+		// Initialization service call
+		if (intent.hasExtra(IS_INITIALIZATION_KEY)) {
+			Log.d(TAG, "Initialization call.");
+			
+			// Abort if services not connected
+			if (!isServicesConnected())
+				return;
+			
+			geofenceStore = new SimpleGeofenceStore(this);
+			setupLocationClient();
+			locationClient.connect();
+		}
+		// User left geofence
+		else {
+			Log.d(TAG, "Geofence exit call.");
+			
+			// Errors
+			if (LocationClient.hasError(intent)) {
+				int errorCode = LocationClient.getErrorCode(intent);
+				Log.e(TAG, "Location Services error: " + errorCode);
+			}
+			else {
+				geofenceStore = new SimpleGeofenceStore(this);
+				
+				List<Geofence> triggeredGeofences = LocationClient.getTriggeringGeofences(intent);
+				for (Geofence geofence : triggeredGeofences) {
+					geofenceStore.removeGeofence(geofence.getRequestId());
+				}
+			}
+		}
 	}
 	
 	/**
@@ -64,10 +99,31 @@ public class LocationService extends IntentService implements
 	
 	/**
 	 * 
+	 * @return
 	 */
-	private Location getCurrentLocation() {
+	private SimpleGeofence createGeofenceAtCurrentLocation() {
 		Log.d(TAG, "Getting current location");
-		return locationClient.getLastLocation();
+		Location currentLocation = locationClient.getLastLocation();
+		Log.d(TAG, "Latitude: " + currentLocation.getLatitude() + ", Longitude: " + currentLocation.getLongitude());
+		
+		return new SimpleGeofence("1", 
+				currentLocation.getLatitude(), 
+				currentLocation.getLongitude(), 
+				100, 
+				Geofence.NEVER_EXPIRE, 
+				Geofence.GEOFENCE_TRANSITION_EXIT);
+	}
+	
+	private PendingIntent getTransitionPendingIntent() {
+		Intent intent = new Intent(this, LocationService.class);
+		return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+	
+	private void createNotification(){
+//		Notification.Builder builder = new Notification.Builder(this)
+//			.setSmallIcon(3)
+//			.setContentTitle("")
+//			.setContentText("");
 	}
 	
 	/**
@@ -78,8 +134,15 @@ public class LocationService extends IntentService implements
 	@Override
 	public void onConnected(Bundle data) {
 		Log.d(TAG, "Location services connected.");
-		Location currentLocation = getCurrentLocation();
-		Log.d(TAG, "Latitude: " + currentLocation.getLatitude() + ", Longitude: " + currentLocation.getLongitude());
+		
+		// Create a geofence object and add it to the store
+		SimpleGeofence geofence = createGeofenceAtCurrentLocation();
+		geofenceStore.addGeofence(geofence);
+		
+		// Send request to add geofences to the location client
+		Log.d(TAG, "Attempting to add geofences to the location client.");
+		List<Geofence> geofences = Arrays.asList(geofence.toGeofence());
+		locationClient.addGeofences(geofences, getTransitionPendingIntent(), this);
 	}
 
 	/**
@@ -115,5 +178,22 @@ public class LocationService extends IntentService implements
 //            Log.e(TAG, "Connection to location services failed with no resolution.");
 //        }
 		Log.e(TAG, "Connection to location services failed.");
+	}
+
+	@Override
+	public void onAddGeofencesResult(int statusCode, String[] geofenceRequestIds) {
+		// Adding geofences was successful
+		if (statusCode == LocationStatusCodes.SUCCESS) {
+			Log.d(TAG, "Successfully added the geofences.");
+		}
+		else {
+			Log.e(TAG, "Failed to add the geofences.");
+			// Remove the failed geofences from the store
+			for (String id : geofenceRequestIds) {
+				geofenceStore.removeGeofence(id);
+			}
+		}
+		
+		locationClient.disconnect();
 	}
 }

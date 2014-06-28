@@ -22,7 +22,7 @@ public class SimpleGeofenceStore {
     public static final int INVALID_INT_VALUE = -999;
     
     private final SharedPreferences mPrefs;
-    private static final String SHARED_PREFERENCES = "SharedPreferences";
+    private static final String SHARED_PREFERENCES = "BackgroundLocationGeofences";
     
     
     // Create the SharedPreferences storage with private access only
@@ -63,10 +63,12 @@ public class SimpleGeofenceStore {
     /**
      * Save a geofence to shared preferences
      * 
-     * @param id A unique id to 
+     * @param id The ID of a Geofence object
      * @param geofence The SimpleGeofence containing the values you want to save in SharedPreferences
      */
-    public void setGeofence(String id, SimpleGeofence geofence) {
+    public void addGeofence(SimpleGeofence geofence) {
+    	String id = geofence.getId();
+    	
         // Get a SharedPreferences editor instance
         Editor editor = mPrefs.edit();
         
@@ -84,9 +86,9 @@ public class SimpleGeofenceStore {
     /**
      * Remove a geofence from shared preferences
      * 
-     * @param id 
+     * @param id The ID of a Geofence object
      */
-    public void clearGeofence(String id) {
+    public void removeGeofence(String id) {
         // Remove a flattened geofence object from storage by removing all of its keys
         Editor editor = mPrefs.edit();
         editor.remove(getGeofenceFieldKey(id, KEY_LATITUDE));
