@@ -32,6 +32,7 @@
 		<!-- android permissions -->
 		<config-file target="AndroidManifest.xml" parent="/manifest">
 			<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+			<uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"/>
 		</config-file>
 		
 		<!-- android services and receivers -->

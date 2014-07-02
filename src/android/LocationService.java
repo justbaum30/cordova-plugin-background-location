@@ -134,6 +134,9 @@ public class LocationService extends IntentService implements
 	@Override
 	public void onConnected(Bundle data) {
 		Log.d(TAG, "Location services connected.");
+
+		// Set mock mode
+		locationClient.setMockMode(true);
 		
 		// Create a geofence object and add it to the store
 		SimpleGeofence geofence = createGeofenceAtCurrentLocation();
