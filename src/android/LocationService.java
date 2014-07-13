@@ -4,10 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import android.app.IntentService;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -28,6 +31,8 @@ public class LocationService extends IntentService implements
 	
 	public final static String IS_INITIALIZATION_KEY = "isInit";
 	
+	private static final boolean USE_MOCK_SERVICE = false;
+	private static final String PROVIDER = "flp";
 	private static final String TAG = "LocationService";
 	
 	
@@ -65,6 +70,13 @@ public class LocationService extends IntentService implements
 				for (Geofence geofence : triggeredGeofences) {
 					geofenceStore.removeGeofence(geofence.getRequestId());
 				}
+				createNotification();
+				
+				if (!isServicesConnected())
+					return;
+				
+				setupLocationClient();
+				locationClient.connect();
 			}
 		}
 	}
@@ -104,26 +116,36 @@ public class LocationService extends IntentService implements
 	private SimpleGeofence createGeofenceAtCurrentLocation() {
 		Log.d(TAG, "Getting current location");
 		Location currentLocation = locationClient.getLastLocation();
+		if (currentLocation == null && USE_MOCK_SERVICE) {
+			Log.d(TAG, "Setting default start location...");
+			currentLocation = new Location(PROVIDER);
+			currentLocation.setLatitude(37.377166);
+			currentLocation.setLongitude(-122.086966);
+			currentLocation.setAccuracy(3.0f);
+		}
 		Log.d(TAG, "Latitude: " + currentLocation.getLatitude() + ", Longitude: " + currentLocation.getLongitude());
 		
 		return new SimpleGeofence("1", 
 				currentLocation.getLatitude(), 
 				currentLocation.getLongitude(), 
-				100, 
-				Geofence.NEVER_EXPIRE, 
+				10, 
+				1000000, 
 				Geofence.GEOFENCE_TRANSITION_EXIT);
 	}
 	
 	private PendingIntent getTransitionPendingIntent() {
+		Log.d(TAG, "Getting intent");
 		Intent intent = new Intent(this, LocationService.class);
 		return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 	
 	private void createNotification(){
-//		Notification.Builder builder = new Notification.Builder(this)
-//			.setSmallIcon(3)
-//			.setContentTitle("")
-//			.setContentText("");
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+			.setSmallIcon(com.example.hello.R.drawable.icon)
+			.setContentTitle("Location Update")
+			.setContentText("Location Update!!!");
+		NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.notify(1, builder.build());
 	}
 	
 	/**
@@ -136,7 +158,7 @@ public class LocationService extends IntentService implements
 		Log.d(TAG, "Location services connected.");
 
 		// Set mock mode
-		locationClient.setMockMode(true);
+		locationClient.setMockMode(USE_MOCK_SERVICE);
 		
 		// Create a geofence object and add it to the store
 		SimpleGeofence geofence = createGeofenceAtCurrentLocation();
